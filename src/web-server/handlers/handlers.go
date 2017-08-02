@@ -10,15 +10,20 @@ import (
 )
 
 func GetOneRpcCallInfo(c *gin.Context){
-
-}
-
-func PostRpcCall(c *gin.Context){
-	log.Printf("enter posRpcCall..%v", c.Request)
+	log.Printf("enter GetOneRpcCallInfo..%v \n", c.Request)
 	name := c.Param("name")
 	call := interfaces.GetRpcCall(name)
 
-	log.Println(name, call)
+	c.HTML(http.StatusOK, "get_rpc_call_info.tmpl", gin.H{"title": call.Name,
+		"slice": call.ArgFieldName, "name": call.Name})
+}
+
+func PostRpcCall(c *gin.Context){
+	//TODO 解决拷贝的问题
+	log.Printf("enter posRpcCall..%v \n", c.Request)
+	name := c.Param("name")
+	call := interfaces.GetRpcCall(name)
+
 	if call != nil{
 		client, err := rpc_client.GetRpcClient()
 		if err != nil{

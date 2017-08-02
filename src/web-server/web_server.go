@@ -7,12 +7,12 @@ import (
 
 func StartServer() {
 	engine := gin.Default()
-
+	engine.LoadHTMLGlob("template/*")
 	handlerMap(engine)
 	engine.Run(":8080")
 }
 
 func handlerMap(engine *gin.Engine) {
-	//engine.GET("/interfaces/:rpcName", handlers.GetOneRpcCallInfo)
+	engine.GET("/interfaces/getRpcInfo/:name", handlers.GetOneRpcCallInfo)
 	engine.POST("/interfaces/postRpc/:name", handlers.PostRpcCall)
 }
