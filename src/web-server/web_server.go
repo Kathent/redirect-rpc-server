@@ -13,6 +13,7 @@ func StartServer() {
 }
 
 func handlerMap(engine *gin.Engine) {
+	engine.GET("/interfaces", handlers.GetCallInfos)
 	engine.GET("/interfaces/getRpcInfo/:name", handlers.GetOneRpcCallInfo)
 	engine.POST("/interfaces/postRpc/:name", handlers.PostRpcCall)
 }

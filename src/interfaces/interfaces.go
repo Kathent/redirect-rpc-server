@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"fmt"
 	"errors"
+	"utils"
 )
 
 var storeMap = make(map[string]*RpcCall)
@@ -29,14 +30,32 @@ func Register(name string, args interface{}, reply interface{}) {
 	cal.Args = args
 	cal.Reply = reply
 
-	typeof := argsValue.Elem().Type()
-	for i := 0; i < typeof.NumField(); i++{
-		fieldI := typeof.Field(i)
-		cal.ArgFieldName = append(cal.ArgFieldName, fieldI.Name)
-	}
+	typeof := reflect.ValueOf(cal.Args).Elem().Type()
+	cal.ArgFieldName = addArgFieldName(typeof)
+	fmt.Println(name, cal.ArgFieldName, len(cal.ArgFieldName))
 	storeMap[name] = cal
+}
+
+func addArgFieldName(typeOf reflect.Type) []string {
+	result := make([]string, 0, 10)
+	for i := 0; i < typeOf.NumField(); i++ {
+		fieldI := typeOf.Field(i)
+
+		fieldIType := fieldI.Type
+		if fieldIType.Kind() == reflect.Struct {
+			tmp := addArgFieldName(fieldIType)
+			result = utils.Merge(result, tmp)
+		}else {
+			result = append(result, fieldI.Name)
+		}
+	}
+	return result
 }
 
 func GetRpcCall(name string) *RpcCall{
 	return storeMap[name]
+}
+
+func GetAllCalls() map[string]*RpcCall {
+	return storeMap
 }

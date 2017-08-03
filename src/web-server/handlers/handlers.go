@@ -18,9 +18,16 @@ func GetOneRpcCallInfo(c *gin.Context){
 		"slice": call.ArgFieldName, "name": call.Name})
 }
 
+func GetCallInfos(c *gin.Context) {
+	log.Printf("enter GetOneRpcCallInfo..%v \n", c.Request)
+	callMap := interfaces.GetAllCalls()
+	c.HTML(http.StatusOK, "get_calls_info.tmpl", gin.H{"title": "All Calls",
+		"map": callMap})
+}
+
 func PostRpcCall(c *gin.Context){
 	//TODO 解决拷贝的问题
-	log.Printf("enter posRpcCall..%v \n", c.Request)
+	log.Printf("enter posRpcCall..%v , %v\n", c.Request, c.Request.PostForm)
 	name := c.Param("name")
 	call := interfaces.GetRpcCall(name)
 
@@ -28,12 +35,13 @@ func PostRpcCall(c *gin.Context){
 		client, err := rpc_client.GetRpcClient()
 		if err != nil{
 			c.String(http.StatusInternalServerError, fmt.Sprintf("call err..%s, %v", name, err))
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
 		c.Bind(call.Args)
 
+		log.Println("enter posRpcCal args:", call.Args)
 		err = client.Call(call.Name, call.Args, call.Reply)
 		if err != nil{
 			c.String(http.StatusInternalServerError, fmt.Sprintf("call err..%s, %v", name, err))

@@ -25,17 +25,16 @@ body {
     //创建 input 文本框
     function CreateInput(){
         {{range $i, $v :=.slice}}
-        	var label = document.createElement("label")
-        	label.for = {{$i}}
-        	label.text = {{$v}}
-        	label.class = "sr-only"
-        	document.getElementById("input_form").appendChild(label)
+            var label = document.createElement("label")
+            label.innerHTML = "{{$v}}"
+            label.for = {{$i}}
+            document.getElementById("input_form").appendChild(label)
 
         	var input = document.createElement("input" );
         	input.type = "text" ;
         	input.id = {{$i}} ;
-        	input.value = {{$v }};
-        	input.placeholder = {{$v}}
+        	input.form = "input_form"
+        	input.name = {{$v }};
         	//如果使用CSS定义input样式 可以用 className 指定样式名，如用JS创建，放开下面的注释即可
         	input.className = "TextStyle" ;
         	document.getElementById("input_form" ).appendChild(input);

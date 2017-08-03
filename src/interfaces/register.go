@@ -10,4 +10,10 @@ func RegisterAll() {
 
 	Register("ConnRpcObject.AddQueue", &entity.QueueADArgs{}, &entity.QueueADResult{})
 	Register("ConnRpcObject.DeleteQueue", &entity.QueueADArgs{}, &entity.QueueADResult{})
+
+	Register("ConnRpcObject.CallEnd", &entity.UserCallEndArgs{}, &entity.UserCallEndResult{})
+
+	Register("SeatTrigger.CheckIO", &entity.Seat{}, new(bool))
+	Register("SeatTrigger.ChangeCapacity", &entity.Seat{}, new(bool))
+	Register("SeatTrigger.ChangeQueueIds", &entity.Seat{}, new(bool))
 }
