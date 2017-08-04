@@ -43,11 +43,12 @@ func addArgFieldName(typeOf reflect.Type) []string {
 
 		fieldIType := fieldI.Type
 		switch fieldIType.Kind() {
-		case reflect.Slice:
-		case reflect.Map:
-			tmp := addArgFieldName(fieldIType.Elem())
-			result = utils.Merge(result, tmp)
-			break
+		//case reflect.Array:
+		//case reflect.Slice:
+		//case reflect.Map:
+		//	tmp := addArgFieldName(fieldIType.Elem())
+		//	result = utils.Merge(result, tmp)
+		//	break
 		case reflect.Struct:
 			tmp := addArgFieldName(fieldIType)
 			result = utils.Merge(result, tmp)
