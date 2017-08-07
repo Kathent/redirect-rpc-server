@@ -3,17 +3,84 @@ package interfaces
 import "common-module/entity"
 
 func RegisterAll() {
-	Register("ConnRpcObject.ConnectResultReport", &entity.ConnectArgs{}, &entity.ConnectResult{})
+	Register("ConnRpcObject.ConnectResultReport",
+		func() interface{}{
+			return &entity.ConnectArgs{}
+		},
 
-	Register("ConnRpcObject.EnQueue", &entity.QueueIOArgs{}, &entity.QueueIOResult{})
-	Register("ConnRpcObject.DeQueue", &entity.QueueIOArgs{}, &entity.QueueIOResult{})
+		func() interface{}{
+			return &entity.ConnectResult{}
+		})
 
-	Register("ConnRpcObject.AddQueue", &entity.QueueADArgs{}, &entity.QueueADResult{})
-	Register("ConnRpcObject.DeleteQueue", &entity.QueueADArgs{}, &entity.QueueADResult{})
+	Register("ConnRpcObject.EnQueue",
+		func() interface{}{
+			return &entity.QueueIOArgs{}
+		},
 
-	Register("ConnRpcObject.CallEnd", &entity.UserCallEndArgs{}, &entity.UserCallEndResult{})
+		func() interface{}{
+			return &entity.QueueIOResult{}
+		})
 
-	Register("SeatTrigger.CheckIO", &entity.Seat{}, new(bool))
-	Register("SeatTrigger.ChangeCapacity", &entity.Seat{}, new(bool))
-	Register("SeatTrigger.ChangeQueueIds", &entity.Seat{}, new(bool))
+	Register("ConnRpcObject.DeQueue",
+		func() interface{}{
+			return &entity.QueueIOArgs{}
+		},
+
+		func() interface{}{
+			return &entity.QueueIOResult{}
+		})
+
+	Register("ConnRpcObject.AddQueue",
+		func() interface{}{
+			return &entity.QueueADArgs{}
+		},
+
+		func() interface{}{
+			return &entity.QueueADResult{}
+		})
+
+	Register("ConnRpcObject.DeleteQueue",
+		func() interface{}{
+			return &entity.QueueADArgs{}
+		},
+
+		func() interface{}{
+			return &entity.QueueADResult{}
+		})
+
+	Register("ConnRpcObject.CallEnd",
+		func() interface{}{
+			return &entity.UserCallEndArgs{}
+		},
+
+		func() interface{}{
+			return &entity.UserCallEndResult{}
+		})
+
+	Register("ConnRpcObject.CheckIO",
+		func() interface{}{
+			return &entity.Seat{}
+		},
+
+		func() interface{}{
+			return new(bool)
+		})
+
+	Register("ConnRpcObject.ChangeCapacity",
+		func() interface{}{
+			return &entity.Seat{}
+		},
+
+		func() interface{}{
+			return new(bool)
+		})
+
+	Register("ConnRpcObject.ChangeQueueIds",
+		func() interface{}{
+			return &entity.Seat{}
+		},
+
+		func() interface{}{
+			return new(bool)
+		})
 }

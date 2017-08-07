@@ -10,27 +10,27 @@ import (
 var storeMap = make(map[string]*RpcCall)
 
 type RpcCall struct {
-	Name      string
-	Args   interface{}
-	Reply interface{}
+	Name     string
+	ArgsGen  func() interface{}
+	ReplyGen func() interface{}
 
 	ArgFieldName []string
 }
 
 
-func Register(name string, args interface{}, reply interface{}) {
-	argsValue := reflect.ValueOf(args)
-	replyValue := reflect.ValueOf(reply)
+func Register(name string, args func() interface{}, reply func() interface{}) {
+	argsValue := reflect.ValueOf(args())
+	replyValue := reflect.ValueOf(reply())
 	if argsValue.Kind() != reflect.Ptr || replyValue.Kind() != reflect.Ptr{
 		panic(errors.New(fmt.Sprintf("%s args and reply not ptr..", name)))
 	}
 
 	cal := new(RpcCall)
 	cal.Name = name
-	cal.Args = args
-	cal.Reply = reply
+	cal.ArgsGen = args
+	cal.ReplyGen = reply
 
-	typeof := reflect.ValueOf(cal.Args).Elem().Type()
+	typeof := argsValue.Elem().Type()
 	cal.ArgFieldName = addArgFieldName(typeof)
 	//fmt.Println(name, cal.ArgFieldName, len(cal.ArgFieldName))
 	storeMap[name] = cal
@@ -45,6 +45,8 @@ func addArgFieldName(typeOf reflect.Type) []string {
 		switch fieldIType.Kind() {
 		//case reflect.Array:
 		//case reflect.Slice:
+		//	result = append(result, fieldI.Name)
+		//	break
 		//case reflect.Map:
 		//	tmp := addArgFieldName(fieldIType.Elem())
 		//	result = utils.Merge(result, tmp)

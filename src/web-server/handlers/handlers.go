@@ -26,7 +26,6 @@ func GetCallInfos(c *gin.Context) {
 }
 
 func PostRpcCall(c *gin.Context){
-	//TODO 解决拷贝的问题
 	log.Printf("enter posRpcCall..%v , %v\n", c.Request, c.Request.PostForm)
 	name := c.Param("name")
 	call := interfaces.GetRpcCall(name)
@@ -39,16 +38,18 @@ func PostRpcCall(c *gin.Context){
 			return
 		}
 
-		c.Bind(call.Args)
+		args := call.ArgsGen()
+		reply := call.ReplyGen()
+		c.Bind(args)
 
-		log.Println("enter posRpcCal args:", call.Args)
-		err = rpc_client.ClientCall(client, call.Name, call.Args, call.Reply)
+		log.Println("enter posRpcCal args:", args)
+		err = rpc_client.ClientCall(client, call.Name, args, reply)
 		if err != nil{
 			c.String(http.StatusInternalServerError, fmt.Sprintf("call err..%s, %v", name, err))
 			return
 		}
 
-		c.String(http.StatusOK, fmt.Sprintf("cal return %v", call.Reply))
+		c.String(http.StatusOK, fmt.Sprintf("cal return %v", reply))
 		return
 	}
 	c.String(http.StatusOK, fmt.Sprintf("call not exist..%s", name))
