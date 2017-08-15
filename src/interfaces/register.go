@@ -1,6 +1,8 @@
 package interfaces
 
-import "common-module/entity"
+import (
+	"queueing-entity/common-module/entity"
+)
 
 func RegisterAll() {
 	Register("ConnRpcObject.ConnectResultReport",
