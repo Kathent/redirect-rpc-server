@@ -7,9 +7,25 @@ import (
 	"utils"
 )
 
-var storeMap = make(map[string]*RpcCall)
+var storeMap = make(map[string]RpcCall)
 
-type RpcCall struct {
+type RpcCall interface {
+	//发出rpc调用
+	invokeRpcCall(args interface{}) interface{}
+	//初始化操作
+	init(name string, args func() interface{}, reply func() interface{}, extra interface{})
+}
+
+type GRpcCall struct {
+	NormalRpcCall
+	client interface{}
+}
+
+func (GRpcCall) invokeRpcCall(arg interface{}) interface{}{
+	return nil
+}
+
+type NormalRpcCall struct {
 	Name     string
 	ArgsGen  func() interface{}
 	ReplyGen func() interface{}
@@ -17,23 +33,41 @@ type RpcCall struct {
 	ArgFieldName []string
 }
 
+func (cal *GRpcCall) init(name string, args func() interface{}, reply func() interface{}, extra interface{}){
+	cal.NormalRpcCall.init(name, args, reply, extra)
+	cal.client = extra
+}
 
-func Register(name string, args func() interface{}, reply func() interface{}) {
-	argsValue := reflect.ValueOf(args())
-	replyValue := reflect.ValueOf(reply())
-	if argsValue.Kind() != reflect.Ptr || replyValue.Kind() != reflect.Ptr{
-		panic(errors.New(fmt.Sprintf("%s args and reply not ptr..", name)))
-	}
+func (NormalRpcCall) invokeRpcCall(arg interface{}) interface{}{
+	return nil
+}
 
-	cal := new(RpcCall)
+func (cal *NormalRpcCall) init(name string, args func() interface{}, reply func() interface{}, extra interface{}){
 	cal.Name = name
 	cal.ArgsGen = args
 	cal.ReplyGen = reply
 
-	typeof := argsValue.Elem().Type()
+	typeof := reflect.ValueOf(args()).Elem().Type()
 	cal.ArgFieldName = addArgFieldName(typeof)
-	//fmt.Println(name, cal.ArgFieldName, len(cal.ArgFieldName))
-	storeMap[name] = cal
+}
+
+func Register(name string, args func() interface{}, reply func() interface{}, client interface{}) {
+	argsValue := reflect.ValueOf(args())
+	replyValue := reflect.ValueOf(reply())
+	if argsValue.Kind() != reflect.Ptr || replyValue.Kind() != reflect.Ptr {
+		panic(errors.New(fmt.Sprintf("%s args and reply not ptr..", name)))
+	}
+
+	var call RpcCall
+	if client != nil{
+		gRpc := new(GRpcCall)
+		call = gRpc
+	}else {
+		nRpc := new(NormalRpcCall)
+		call = nRpc
+	}
+
+	call.init(name, args, reply, client)
 }
 
 func addArgFieldName(typeOf reflect.Type) []string {
@@ -63,10 +97,10 @@ func addArgFieldName(typeOf reflect.Type) []string {
 	return result
 }
 
-func GetRpcCall(name string) *RpcCall{
+func GetRpcCall(name string) RpcCall {
 	return storeMap[name]
 }
 
-func GetAllCalls() map[string]*RpcCall {
+func GetAllCalls() map[string]RpcCall {
 	return storeMap
 }
