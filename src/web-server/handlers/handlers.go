@@ -5,7 +5,6 @@ import (
 	"interfaces"
 	"net/http"
 	"fmt"
-	"web-server/rpc-client"
 	"log"
 )
 
@@ -14,8 +13,9 @@ func GetOneRpcCallInfo(c *gin.Context){
 	name := c.Param("name")
 	call := interfaces.GetRpcCall(name)
 
-	c.HTML(http.StatusOK, "get_rpc_call_info.tmpl", gin.H{"title": call.Name,
-		"slice": call.ArgFieldName, "name": call.Name})
+	base := call.GetBaseRpcCall()
+	c.HTML(http.StatusOK, "get_rpc_call_info.tmpl", gin.H{"title": base.Name,
+		"slice": base.ArgFieldName, "name": base.Name})
 }
 
 func GetCallInfos(c *gin.Context) {
@@ -31,22 +31,15 @@ func PostRpcCall(c *gin.Context){
 	call := interfaces.GetRpcCall(name)
 
 	if call != nil{
-		client, err := rpc_client.GetRpcClient()
-		if err != nil{
-			c.String(http.StatusInternalServerError, fmt.Sprintf("call err..%s, %v", name, err))
-			log.Println(err)
-			return
-		}
+		base := call.GetBaseRpcCall()
 
-		args := call.ArgsGen()
-		reply := call.ReplyGen()
+		args := base.ArgsGen()
+		reply := base.ReplyGen()
 		c.Bind(args)
 
-		log.Println("enter posRpcCal args:", args)
-		err = rpc_client.ClientCall(client, call.Name, args, reply)
+		err := call.InvokeRpcCall(args, reply)
 		if err != nil{
-			c.String(http.StatusInternalServerError, fmt.Sprintf("call err..%s, %v", name, err))
-			return
+			c.String(http.StatusInternalServerError, fmt.Sprintf("internal err %v", err))
 		}
 
 		c.String(http.StatusOK, fmt.Sprintf("cal return %v", reply))

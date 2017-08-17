@@ -5,53 +5,96 @@ import (
 	"fmt"
 	"errors"
 	"utils"
+	"web-server/rpc-client"
+	"google.golang.org/grpc"
+	"context"
+	"web-server/grpc-client"
+	"strings"
 )
 
 var storeMap = make(map[string]RpcCall)
 
 type RpcCall interface {
 	//发出rpc调用
-	invokeRpcCall(args interface{}) interface{}
+	InvokeRpcCall(args interface{}, reply interface{}) error
 	//初始化操作
-	init(name string, args func() interface{}, reply func() interface{}, extra interface{})
+	init(name string, args func() interface{}, reply func() interface{}, extra interface{}) error
+	//获取Rpc基本数据
+	GetBaseRpcCall() *BaseRpcCall
 }
 
-type GRpcCall struct {
-	NormalRpcCall
-	client interface{}
-}
-
-func (GRpcCall) invokeRpcCall(arg interface{}) interface{}{
-	return nil
-}
-
-type NormalRpcCall struct {
+type BaseRpcCall struct {
 	Name     string
 	ArgsGen  func() interface{}
 	ReplyGen func() interface{}
-
 	ArgFieldName []string
 }
 
-func (cal *GRpcCall) init(name string, args func() interface{}, reply func() interface{}, extra interface{}){
-	cal.NormalRpcCall.init(name, args, reply, extra)
-	cal.client = extra
+func NewBaseRpc(name string, args func() interface{}, reply func() interface{}) *BaseRpcCall{
+	res := &BaseRpcCall{
+		Name: name,
+		ArgsGen: args,
+		ReplyGen: reply,
+	}
+
+	typeof := reflect.ValueOf(args()).Elem().Type()
+	res.ArgFieldName = addArgFieldName(typeof)
+	return res
 }
 
-func (NormalRpcCall) invokeRpcCall(arg interface{}) interface{}{
+type GRpcCall struct {
+	*BaseRpcCall
+	GRpcName string
+}
+
+func (cal *GRpcCall) InvokeRpcCall(arg interface{}, reply interface{}) error{
+	return grpc.Invoke(context.Background(), cal.GRpcName, arg, reply, grpc_client.GetConnClient())
+}
+
+func (cal *GRpcCall) init(name string, args func() interface{}, reply func() interface{}, extra interface{}) error{
+	structValue := reflect.ValueOf(extra).Elem()
+	pkgName := structValue.Type().PkgPath()
+	pkgName = strings.Replace(pkgName, "/", ".", -1)
+	structName := structValue.Type().Name()
+
+	interfaceMapName := fmt.Sprintf("%s.%s", structName, name)
+	gRpcName := fmt.Sprintf("/%s/%s", pkgName, name)
+
+	cal.BaseRpcCall = NewBaseRpc(interfaceMapName, args, reply)
+	cal.GRpcName = gRpcName
 	return nil
 }
 
-func (cal *NormalRpcCall) init(name string, args func() interface{}, reply func() interface{}, extra interface{}){
-	cal.Name = name
-	cal.ArgsGen = args
-	cal.ReplyGen = reply
-
-	typeof := reflect.ValueOf(args()).Elem().Type()
-	cal.ArgFieldName = addArgFieldName(typeof)
+func (cal *GRpcCall) GetBaseRpcCall() *BaseRpcCall {
+	return cal.BaseRpcCall
 }
 
-func Register(name string, args func() interface{}, reply func() interface{}, client interface{}) {
+type NormalRpcCall struct {
+	*BaseRpcCall
+}
+
+func (cal *NormalRpcCall) InvokeRpcCall(arg interface{}, reply interface{}) error{
+	client, err := rpc_client.GetRpcClient()
+	if err != nil{
+		return err
+	}
+	err = rpc_client.ClientCall(client, cal.BaseRpcCall.Name, arg, reply)
+	if err != nil{
+		return err
+	}
+	return nil
+}
+
+func (cal *NormalRpcCall) init(name string, args func() interface{}, reply func() interface{}, extra interface{}) error{
+	cal.BaseRpcCall = NewBaseRpc(name, args, reply)
+	return nil
+}
+
+func (cal *NormalRpcCall) GetBaseRpcCall() *BaseRpcCall {
+	return cal.BaseRpcCall
+}
+
+func Register(name string, args func() interface{}, reply func() interface{}, client interface{}){
 	argsValue := reflect.ValueOf(args())
 	replyValue := reflect.ValueOf(reply())
 	if argsValue.Kind() != reflect.Ptr || replyValue.Kind() != reflect.Ptr {
@@ -67,7 +110,12 @@ func Register(name string, args func() interface{}, reply func() interface{}, cl
 		call = nRpc
 	}
 
-	call.init(name, args, reply, client)
+	err := call.init(name, args, reply, client)
+	if err != nil{
+		panic(err)
+	}
+
+	storeMap[call.GetBaseRpcCall().Name] = call
 }
 
 func addArgFieldName(typeOf reflect.Type) []string {
